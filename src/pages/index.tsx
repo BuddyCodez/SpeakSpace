@@ -1,333 +1,178 @@
-import { trpc } from '~/utils/trpc';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { signIn, signOut, useSession } from 'next-auth/react';
-import Head from 'next/head';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import type React from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { CheckCircle, Users, Video, BarChart3, Clock, MessageSquare } from "lucide-react"
 
-function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
-  const addPost = trpc.post.add.useMutation();
-  const { data: session } = useSession();
-  const [message, setMessage] = useState('');
-  const [enterToPostMessage, setEnterToPostMessage] = useState(true);
-  async function postMessage() {
-    const input = {
-      text: message,
-    };
-    try {
-      await addPost.mutateAsync(input);
-      setMessage('');
-      onMessagePost();
-    } catch {}
-  }
-
-  const isTyping = trpc.post.isTyping.useMutation();
-
-  const userName = session?.user?.name;
-  if (!userName) {
-    return (
-      <div className="flex w-full justify-between rounded bg-gray-800 px-3 py-2 text-lg text-gray-200">
-        <p className="font-bold">
-          You have to{' '}
-          <button
-            className="inline font-bold underline"
-            onClick={() => signIn()}
-          >
-            sign in
-          </button>{' '}
-          to write.
-        </p>
-        <button
-          onClick={() => signIn()}
-          data-testid="signin"
-          className="h-full rounded bg-indigo-500 px-4"
-        >
-          Sign In
-        </button>
-      </div>
-    );
-  }
+export default function Home() {
   return (
-    <>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          /**
-           * In a real app you probably don't want to use this manually
-           * Checkout React Hook Form - it works great with tRPC
-           * @see https://react-hook-form.com/
-           */
-          await postMessage();
-        }}
-      >
-        <fieldset disabled={addPost.isPending} className="min-w-0">
-          <div className="flex w-full items-end rounded bg-gray-500 px-3 py-2 text-lg text-gray-200">
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="flex-1 bg-transparent outline-0"
-              rows={message.split(/\r|\n/).length}
-              id="text"
-              name="text"
-              autoFocus
-              onKeyDown={async (e) => {
-                if (e.key === 'Shift') {
-                  setEnterToPostMessage(false);
-                }
-                if (e.key === 'Enter' && enterToPostMessage) {
-                  void postMessage();
-                }
-                isTyping.mutate({ typing: true });
-              }}
-              onKeyUp={(e) => {
-                if (e.key === 'Shift') {
-                  setEnterToPostMessage(true);
-                }
-              }}
-              onBlur={() => {
-                setEnterToPostMessage(true);
-                isTyping.mutate({ typing: false });
-              }}
-            />
-            <div>
-              <button type="submit" className="rounded bg-indigo-500 px-4 py-1">
-                Submit
-              </button>
+    <div className="flex flex-col min-h-screen">
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 md:pt-40 md:pb-32 bg-gradient-to-b from-background to-background/80">
+        <div className="container px-4 md:px-6">
+          <div className="flex flex-col items-center gap-4 text-center ">
+            <Badge variant="outline" className="px-3 py-1 text-sm text-white bg-blue-600 rounded-xl">
+              Revolutionize Your Communication Skills
+            </Badge>
+            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
+              Unlock Your Full Potential in <span className="text-blue-600">Discussions & Interviews</span>
+            </h1>
+            <p className="max-w-[700px] text-muted-foreground md:text-xl">
+              The ultimate real-time collaborative platform empowering students and professionals to excel in
+              high-stakes communication scenarios.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+              <Button size="lg" asChild>
+                <Link href="/login">Start Your Journey</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="#how-it-works">Discover More</Link>
+              </Button>
             </div>
           </div>
-        </fieldset>
-        {addPost.error && (
-          <p style={{ color: 'red' }}>{addPost.error.message}</p>
-        )}
-      </form>
-    </>
-  );
-}
-
-export default function IndexPage() {
-  const postsQuery = trpc.post.infinite.useInfiniteQuery(
-    {},
-    {
-      getNextPageParam: (d) => d.nextCursor,
-    },
-  );
-  const utils = trpc.useUtils();
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = postsQuery;
-
-  // list of messages that are rendered
-  const [messages, setMessages] = useState(() => {
-    const msgs = postsQuery.data?.pages.map((page) => page.items).flat();
-    return msgs;
-  });
-  type Post = NonNullable<typeof messages>[number];
-  const { data: session } = useSession();
-  const userName = session?.user?.name;
-  const scrollTargetRef = useRef<HTMLDivElement>(null);
-
-  // fn to add and dedupe new messages onto state
-  const addMessages = useCallback((incoming?: Post[]) => {
-    setMessages((current) => {
-      const map: Record<Post['id'], Post> = {};
-      for (const msg of current ?? []) {
-        map[msg.id] = msg;
-      }
-      for (const msg of incoming ?? []) {
-        map[msg.id] = msg;
-      }
-      return Object.values(map).sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
-      );
-    });
-  }, []);
-
-  // when new data from `useInfiniteQuery`, merge with current state
-  useEffect(() => {
-    const msgs = postsQuery.data?.pages.map((page) => page.items).flat();
-    addMessages(msgs);
-  }, [postsQuery.data?.pages, addMessages]);
-
-  const scrollToBottomOfList = useCallback(() => {
-    if (scrollTargetRef.current == null) {
-      return;
-    }
-
-    scrollTargetRef.current.scrollIntoView({
-      behavior: 'smooth',
-      block: 'end',
-    });
-  }, [scrollTargetRef]);
-  useEffect(() => {
-    scrollToBottomOfList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  // subscribe to new posts and add
-  trpc.post.onAdd.useSubscription(undefined, {
-    onData(post) {
-      addMessages([post]);
-    },
-    onError(err) {
-      console.error('Subscription error:', err);
-      // we might have missed a message - invalidate cache
-      utils.post.infinite.invalidate();
-    },
-  });
-
-  const whoIsTypingResult = trpc.post.whoIsTyping.useSubscription();
-
-  return (
-    <>
-      <Head>
-        <title>Prisma Starter</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <div className="flex h-screen flex-col md:flex-row">
-        <section className="flex w-full flex-col bg-gray-800 md:w-72">
-          <div className="flex-1 overflow-y-hidden">
-            <div className="flex h-full flex-col divide-y divide-gray-700">
-              <header className="p-4">
-                <h1 className="text-3xl font-bold text-gray-50">
-                  tRPC WebSocket starter
-                </h1>
-                <p className="text-sm text-gray-400">
-                  Showcases WebSocket + subscription support
-                  <br />
-                  <a
-                    className="text-gray-100 underline"
-                    href="https://github.com/trpc/examples-next-prisma-starter-websockets"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View Source on GitHub
-                  </a>
-                </p>
-              </header>
-              <div className="hidden flex-1 space-y-6 overflow-y-auto p-4 text-gray-400 md:block">
-                <article className="space-y-2">
-                  <h2 className="text-lg text-gray-200">Introduction</h2>
-                  <ul className="list-inside list-disc space-y-2">
-                    <li>Open inspector and head to Network tab</li>
-                    <li>All client requests are handled through WebSockets</li>
-                    <li>
-                      We have a simple backend subscription on new messages that
-                      adds the newly added message to the current state
-                    </li>
-                  </ul>
-                </article>
-                {userName && (
-                  <article>
-                    <h2 className="text-lg text-gray-200">User information</h2>
-                    <ul className="space-y-2">
-                      <li className="text-lg">
-                        You&apos;re{' '}
-                        <input
-                          id="name"
-                          name="name"
-                          type="text"
-                          disabled
-                          className="bg-transparent"
-                          value={userName}
-                        />
-                      </li>
-                      <li>
-                        <button onClick={() => signOut()}>Sign Out</button>
-                      </li>
-                    </ul>
-                  </article>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="hidden h-16 shrink-0 md:block"></div>
-        </section>
-        <div className="flex-1 overflow-y-hidden md:h-screen">
-          <section className="flex h-full flex-col justify-end space-y-4 bg-gray-700 p-4">
-            <div className="space-y-4 overflow-y-auto">
-              <button
-                data-testid="loadMore"
-                onClick={() => fetchNextPage()}
-                disabled={!hasNextPage || isFetchingNextPage}
-                className="rounded bg-indigo-500 px-4 py-2 text-white disabled:opacity-40"
-              >
-                {isFetchingNextPage
-                  ? 'Loading more...'
-                  : hasNextPage
-                    ? 'Load More'
-                    : 'Nothing more to load'}
-              </button>
-              <div className="space-y-4">
-                {messages?.map((item) => (
-                  <article key={item.id} className=" text-gray-50">
-                    <header className="flex space-x-2 text-sm">
-                      <h3 className="text-base">
-                        {item.source === 'RAW' ? (
-                          item.name
-                        ) : (
-                          <a
-                            href={`https://github.com/${item.name}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {item.name}
-                          </a>
-                        )}
-                      </h3>
-                      <span className="text-gray-500">
-                        {new Intl.DateTimeFormat('en-GB', {
-                          dateStyle: 'short',
-                          timeStyle: 'short',
-                        }).format(item.createdAt)}
-                      </span>
-                    </header>
-                    <p className="whitespace-pre-line text-xl leading-tight">
-                      {item.text}
-                    </p>
-                  </article>
-                ))}
-                <div ref={scrollTargetRef}></div>
-              </div>
-            </div>
-            <div className="w-full">
-              <AddMessageForm onMessagePost={() => scrollToBottomOfList()} />
-              <p className="h-2 italic text-gray-400">
-                {whoIsTypingResult.data?.length
-                  ? `${whoIsTypingResult.data.join(', ')} typing...`
-                  : ''}
-              </p>
-            </div>
-
-            {process.env.NODE_ENV !== 'production' && (
-              <div className="hidden md:block">
-                <ReactQueryDevtools initialIsOpen={false} />
-              </div>
-            )}
-          </section>
         </div>
-      </div>
-    </>
-  );
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-16 md:py-24 bg-muted/50">
+        <div className="container px-4 md:px-6">
+          <div className="flex flex-col items-center gap-4 text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Powerful Features</h2>
+            <p className="max-w-[700px] text-muted-foreground md:text-lg">
+              Cutting-edge tools designed to transform your communication abilities and boost your career prospects.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <FeatureCard
+              icon={<Users className="h-10 w-10 text-blue-600" />}
+              title="Dynamic Role-based Sessions"
+              description="Immerse yourself in specialized practice as a Moderator, Participant, or Evaluator for authentic skill development."
+            />
+            <FeatureCard
+              icon={<Clock className="h-10 w-10 text-blue-600" />}
+              title="Intelligent Session Management"
+              description="Effortlessly create customized sessions with advanced topic selection, precision timers, and seamless participant coordination."
+            />
+            <FeatureCard
+              icon={<MessageSquare className="h-10 w-10 text-blue-600" />}
+              title="Interactive Discussion Rooms"
+              description="Engage in crystal-clear real-time text conversations and premium voice discussions for maximum impact."
+            />
+            <FeatureCard
+              icon={<CheckCircle className="h-10 w-10 text-blue-600" />}
+              title="Comprehensive Feedback System"
+              description="Receive detailed, actionable insights with professional ratings on every aspect of your communication performance."
+            />
+            <FeatureCard
+              icon={<BarChart3 className="h-10 w-10 text-blue-600" />}
+              title="Advanced Analytics Dashboard"
+              description="Visualize your progress with stunning charts and identify key improvement opportunities with AI-powered insights."
+            />
+            <FeatureCard
+              icon={<Video className="h-10 w-10 text-blue-600" />}
+              title="Realistic Interview Simulation"
+              description="Master high-pressure scenarios with industry-specific simulations that prepare you for real-world success."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-16 md:py-24">
+        <div className="container px-4 md:px-6">
+          <div className="flex flex-col items-center gap-4 text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">How It Works</h2>
+            <p className="max-w-[700px] text-muted-foreground md:text-lg">
+              Simple steps to improve your communication skills
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <StepCard
+              number="01"
+              title="Create an Account"
+              description="Sign up and choose your role: Moderator, Participant, or Evaluator."
+            />
+            <StepCard
+              number="02"
+              title="Join or Create a Session"
+              description="Set up a new discussion or join an existing one with your peers."
+            />
+            <StepCard
+              number="03"
+              title="Practice & Get Feedback"
+              description="Participate in discussions and receive detailed feedback to improve."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 md:py-24 bg-blue-600 text-white">
+        <div className="container px-4 md:px-6">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+              Ready to Transform Your Communication Skills?
+            </h2>
+            <p className="max-w-[700px] md:text-xl">
+              Join thousands of successful professionals who've elevated their careers through SpeakSpace's
+              revolutionary platform.
+            </p>
+            <Button size="lg" variant="secondary" className="mt-6" asChild>
+              <Link href="/login">Launch Your Success Story</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-6 md:py-12 border-t">
+        <div className="container px-4 md:px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-xl">SpeakSpace</span>
+            </div>
+            <p className="text-sm text-muted-foreground">© 2025 SpeakSpace. All rights reserved.</p>
+            <div className="flex items-center gap-4">
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                Privacy Policy
+              </Link>
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                Terms of Service
+              </Link>
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                Contact
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  )
 }
 
-/**
- * If you want to statically render this page
- * - Export `appRouter` & `createContext` from [trpc].ts
- * - Make the `opts` object optional on `createContext()`
- *
- * @see https://trpc.io/docs/v11/ssg
- */
-// export const getStaticProps = async (
-//   context: GetStaticPropsContext<{ filter: string }>,
-// ) => {
-//   const ssg = createServerSideHelpers({
-//     router: appRouter,
-//     ctx: await createContext(),
-//   });
-//
-//   await ssg.fetchQuery('post.all');
-//
-//   return {
-//     props: {
-//       trpcState: ssg.dehydrate(),
-//       filter: context.params?.filter ?? 'all',
-//     },
-//     revalidate: 1,
-//   };
-// };
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+  return (
+    <Card className="transition-all hover:shadow-md hover:shadow-blue-100 dark:hover:shadow-blue-900/20">
+      <CardHeader>
+        <div className="mb-2">{icon}</div>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <CardDescription className="text-base">{description}</CardDescription>
+      </CardContent>
+    </Card>
+  )
+}
+
+function StepCard({ number, title, description }: { number: string; title: string; description: string }) {
+  return (
+    <div className="flex flex-col items-center text-center">
+      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary font-bold text-xl mb-4">
+        {number}
+      </div>
+      <h3 className="text-xl font-bold mb-2">{title}</h3>
+      <p className="text-muted-foreground">{description}</p>
+    </div>
+  )
+}

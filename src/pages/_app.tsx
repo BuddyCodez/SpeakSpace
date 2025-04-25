@@ -1,8 +1,9 @@
-import '../styles/global.css';
+import '~/styles/global.css';
 import type { Session } from 'next-auth';
 import { getSession, SessionProvider } from 'next-auth/react';
 import type { AppType } from 'next/app';
 import { trpc } from '~/utils/trpc';
+import Navbar from '@/components/navbar/navbar';
 
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
@@ -10,6 +11,9 @@ const MyApp: AppType<{ session: Session | null }> = ({
 }) => {
   return (
     <SessionProvider session={pageProps.session}>
+      <header className='px-1'>
+        <Navbar />
+      </header>
       <Component {...pageProps} />
     </SessionProvider>
   );
