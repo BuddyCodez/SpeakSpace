@@ -14,9 +14,12 @@ import {
     NavigationMenuTrigger,
     navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
-import { Menu } from "lucide-react"
+import { LayoutDashboard, LogOut, Menu, User } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { AuthModal } from "../auth/auth-modal"
+import { signOut, useSession } from "next-auth/react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 
 const routes = [
     {
@@ -56,7 +59,7 @@ const routes = [
 
 export default function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false)
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+    const { data: session } = useSession()
     const pathname = usePathname()
 
     useEffect(() => {
@@ -98,7 +101,7 @@ export default function Navbar() {
                                             <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                                                 {route.children.map((child) => (
                                                     <li key={child.title}>
-                                                        <NavigationMenuLink asChild>
+                                                        <NavigationMenuLink asChild className="rounded-xl">
                                                             <a
                                                                 href={child.href}
                                                                 className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
@@ -116,8 +119,8 @@ export default function Navbar() {
                                     </NavigationMenuItem>
                                 ) : (
                                     <NavigationMenuItem key={route.title}>
-                                        <Link href={route.href} legacyBehavior passHref>
-                                            <NavigationMenuLink className={navigationMenuTriggerStyle()}>{route.title}</NavigationMenuLink>
+                                        <Link href={route.href} legacyBehavior passHref className="rounded-lg">
+                                            <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), 'rounded-xl')}>{route.title}</NavigationMenuLink>
                                         </Link>
                                     </NavigationMenuItem>
                                 ),
@@ -126,7 +129,7 @@ export default function Navbar() {
                     </NavigationMenu>
 
                     <div className="flex items-center gap-2">
-                        <AuthModal />
+                        {session ? <UserMenu /> : <AuthModal />}
                     </div>
                 </div>
 
@@ -159,12 +162,7 @@ export default function Navbar() {
                                     ))}
                                 </nav>
                                 <div className="flex flex-col gap-2 mt-4">
-                                    <Button asChild variant="outline">
-                                        <Link href="/login">Log in</Link>
-                                    </Button>
-                                    <Button asChild>
-                                        <Link href="/register">Sign up</Link>
-                                    </Button>
+                                    {session ? <UserMenu /> : <AuthModal />}
                                 </div>
                             </div>
                         </SheetContent>
@@ -172,5 +170,51 @@ export default function Navbar() {
                 </div>
             </div>
         </header>
+    )
+}
+
+const UserMenu = () => {
+    const { data: session } = useSession()
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                        {session?.user?.image ? (
+                            <AvatarImage src={session.user.image || "/placeholder.svg"} alt={session?.user?.name || "User"} />
+                        ) : (
+                            <AvatarFallback className="bg-blue-600 text-white font-bold">{session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
+                        )}
+                    </Avatar>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 cursor-pointer" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{session?.user?.name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{session?.user?.email}</p>
+                    </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href="/dashboard">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>Dashboard</span>
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href="/profile">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
     )
 }

@@ -1,5 +1,5 @@
 {
-  "name": "examples-next-prisma-websockets-starter",
+  "name": "speakspace",
   "private": true,
   "engines": {
     "node": ">=18.15.0"
@@ -82,6 +82,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
+    "framer-motion": "^12.7.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.488.0",
     "next": "^15.1.7",

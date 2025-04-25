@@ -1,19 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogTrigger } from '~/components/ui/dialog';
 import { LoginForm } from './login-form';
 import { RegisterForm } from './register-form';
-
-export function AuthModal() {
+import { Button } from '../ui/button';
+interface AuthModalProps {
+    onlyLogin?: boolean;
+}
+export function AuthModal({ onlyLogin = false }: AuthModalProps) {
     const [isLogin, setIsLogin] = useState(true);
-
-    return (
-        <Dialog>
+    if (onlyLogin) {
+        return <Dialog>
             <DialogTrigger asChild>
-                <button className="px-4 py-2 rounded-md bg-primary text-primary-foreground">
-                    {isLogin ? 'Login' : 'Register'}
-                </button>
+                <Button className="w-full" size="lg" onClick={() => setIsLogin(false)}>
+                    Login
+                </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 {isLogin ? (
@@ -23,5 +25,37 @@ export function AuthModal() {
                 )}
             </DialogContent>
         </Dialog>
+    }
+    return (
+        <React.Fragment>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="secondary" className="w-full" size="lg" onClick={() => setIsLogin(true)}>
+                        Sign Up
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                    {isLogin ? (
+                        <LoginForm onSwitch={() => setIsLogin(false)} />
+                    ) : (
+                        <RegisterForm onSwitch={() => setIsLogin(true)} />
+                    )}
+                </DialogContent>
+            </Dialog>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button className="w-full" size="lg" onClick={() => setIsLogin(false)}>
+                        Login
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                    {isLogin ? (
+                        <LoginForm onSwitch={() => setIsLogin(false)} />
+                    ) : (
+                        <RegisterForm onSwitch={() => setIsLogin(true)} />
+                    )}
+                </DialogContent>
+            </Dialog>
+        </React.Fragment>
     );
 }

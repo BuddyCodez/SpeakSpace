@@ -22,6 +22,7 @@ import {
     SelectValue,
 } from '~/components/ui/select';
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
     username: z.string().min(3),
@@ -138,8 +139,13 @@ export function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
                     )}
                 />
 
-                <Button type="submit" className="w-full">
-                    Register
+                <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={!form.formState.isValid || form.formState.isSubmitting}
+                >
+                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {form.formState.isSubmitting ? 'Creating Account...' : 'Register'}
                 </Button>
 
                 <div className="text-center text-sm">

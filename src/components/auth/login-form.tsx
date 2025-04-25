@@ -16,6 +16,7 @@ import {
 } from '~/components/ui/form';
 import { Input } from '~/components/ui/input';
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
     email: z.string().email(),
@@ -82,8 +83,14 @@ export function LoginForm({ onSwitch }: { onSwitch: () => void }) {
                     )}
                 />
 
-                <Button type="submit" className="w-full">
-                    Login
+                <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={!form.formState.isValid || form.formState.isSubmitting}
+                >
+
+                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {form.formState.isSubmitting ? 'Logging in...' : 'Login'}
                 </Button>
 
                 <div className="text-center text-sm">
