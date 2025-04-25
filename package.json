@@ -75,7 +75,6 @@
     "@trpc/next": "next",
     "@trpc/react-query": "next",
     "@trpc/server": "next",
-<<<<<<< HEAD
     "@types/bcryptjs": "^3.0.0",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
@@ -86,9 +85,6 @@
     "framer-motion": "^12.7.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.488.0",
-=======
-    "clsx": "^2.0.0",
->>>>>>> c1b4f79f3f323878621e7fd9f62119b1c1f4e30b
     "next": "^15.1.7",
     "next-auth": "npm:next-auth@^4.24.11",
     "next-themes": "^0.4.6",
@@ -132,10 +128,5 @@
   "publishConfig": {
     "access": "restricted"
   },
-<<<<<<< HEAD
   "version": "11.1.0"
 }
-=======
-  "version": "11.1.1"
-}
->>>>>>> c1b4f79f3f323878621e7fd9f62119b1c1f4e30b
